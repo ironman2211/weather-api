@@ -1,17 +1,16 @@
 package com.weatherapi.demo.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weatherapi.demo.client.WeatherApiClient;
 import com.weatherapi.demo.dao.WeatherApiDao;
 import com.weatherapi.demo.dto.Coordinates;
 import com.weatherapi.demo.dto.ResponseDto;
 import com.weatherapi.demo.models.Weather;
-import com.weatherapi.demo.repositories.WeatherRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,8 +18,8 @@ import java.time.ZoneId;
 
 @Slf4j
 @Service
+@CacheConfig(cacheNames="weather")
 public class WeatherService {
-
 
     @Autowired
     private GeocodingService geocodingService;
@@ -28,13 +27,10 @@ public class WeatherService {
     @Autowired
     private WeatherApiDao weatherApiDao;
 
-    @Value("${openweather.api.key}")
-    private String openWeatherApiKey;
-
     @Autowired
-    private RestTemplate restTemplate;
+    private WeatherApiClient weatherApiClient;
 
-    @Cacheable(value = "weather", key = "{#pincode, #date}")
+    @Cacheable(key = "{#pinCode, #date}")
     public ResponseDto getWeatherByPINCodeAndDate(String pinCode, String date) throws Exception {
         Weather weather = null;
         try {
@@ -60,7 +56,7 @@ public class WeatherService {
         }
     }
 
-    private Weather getWeatherFromCoordinated(String pinCode, String date) {
+    public Weather getWeatherFromCoordinated(String pinCode, String date) {
         try {
             LocalDate localDate = LocalDate.parse(date);
             Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
@@ -69,9 +65,7 @@ public class WeatherService {
             Double latitude = latLongFromPINCode.getLatitude();
             Double longitude = latLongFromPINCode.getLongitude();
             if (latitude != null && longitude != null) {
-                String url = "http://api.openweathermap.org/data/2.5/onecall/timemachine?lat=" + latitude + "&lon=" + longitude + "&dt=" + unixTime + "&appid=" + openWeatherApiKey;
-                String response = restTemplate.getForObject(url, String.class);
-
+                String response = weatherApiClient.getWeatherData(latitude, longitude, unixTime);
                 Weather newWeather = new Weather();
                 newWeather.setPincode(pinCode);
                 newWeather.setLatitude(latitude);
