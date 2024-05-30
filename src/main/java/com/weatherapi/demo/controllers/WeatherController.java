@@ -1,5 +1,6 @@
 package com.weatherapi.demo.controllers;
 
+import com.weatherapi.demo.dto.ResponseDto;
 import com.weatherapi.demo.models.Weather;
 import com.weatherapi.demo.services.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,9 @@ public class WeatherController {
     @Autowired
     private WeatherService weatherService;
 
-    @GetMapping("/{pincode}/{date}")
-    public ResponseEntity<?> getWeatherByPincodeAndDate(@PathVariable String pincode, @PathVariable String date) throws Exception {
-        Weather weather = weatherService.getWeatherByPincodeAndDate(pincode, date);
+    @GetMapping("/{pinCode}/{date}")
+    public ResponseEntity<?> getWeatherByPINCodeAndDate(@PathVariable String pinCode, @PathVariable String date) throws Exception {
+        ResponseDto weather = weatherService.getWeatherByPINCodeAndDate(pinCode, date);
         if (weather != null) {
             return ResponseEntity.ok(weather);
         } else {
@@ -23,14 +24,4 @@ public class WeatherController {
         }
     }
 
-    @GetMapping
-    public String tres(){
-        return "hii";
-    }
-
-    @PostMapping
-    public ResponseEntity<?> saveWeather(@RequestBody Weather weather) {
-        weatherService.saveWeather(weather);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
 }
